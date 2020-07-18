@@ -67,12 +67,15 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         return SPRING_CONTEXT;
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
+        // 保存applicationContext容器对象
         this.applicationContext = applicationContext;
         SpringExtensionFactory.addApplicationContext(applicationContext);
         if (applicationContext != null) {
             SPRING_CONTEXT = applicationContext;
             try {
+                // 实例化ServiceBean，自动装配对应的服务实现类后，完成监听器的注入，serviceBean本身也是spring的listener
                 Method method = applicationContext.getClass().getMethod("addApplicationListener", new Class<?>[]{ApplicationListener.class}); // backward compatibility to spring 2.0.1
                 method.invoke(applicationContext, new Object[]{this});
                 supportedApplicationListener = true;
@@ -92,6 +95,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         }
     }
 
+    @Override
     public void setBeanName(String name) {
         this.beanName = name;
     }
@@ -105,11 +109,13 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         return service;
     }
 
+    @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         if (isDelay() && !isExported() && !isUnexported()) {
             if (logger.isInfoEnabled()) {
                 logger.info("The service ready on spring started. service: " + getInterface());
             }
+            // 这里export服务
             export();
         }
     }
@@ -249,11 +255,13 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                 setPath(beanName);
             }
         }
+        // 默认这里返回false的，所以不在这里export服务，而是在onApplicationEvent中
         if (!isDelay()) {
             export();
         }
     }
 
+    @Override
     public void destroy() throws Exception {
         // This will only be called for singleton scope bean, and expected to be called by spring shutdown hook when BeanFactory/ApplicationContext destroys.
         // We will guarantee dubbo related resources being released with dubbo shutdown hook.

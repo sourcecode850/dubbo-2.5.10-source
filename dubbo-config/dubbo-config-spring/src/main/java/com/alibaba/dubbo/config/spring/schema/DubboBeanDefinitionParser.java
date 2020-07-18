@@ -72,11 +72,17 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         beanDefinition.setLazyInit(false);
         String id = element.getAttribute("id");
         if ((id == null || id.length() == 0) && required) {
+            // 如果配置bean没有指定id，则用name，无name用interface，最后还是空，就用bean权限定名字：比如com.alibaba.dubbo.config.RegistryConfig
             String generatedBeanName = element.getAttribute("name");
             if (generatedBeanName == null || generatedBeanName.length() == 0) {
+                // ProtocolCondfig的bean如果不配置名字，默认dubbo，即如果下面的配置中没有name属性的话，会默认用dubbo
+                // <dubbo:protocol name="dubbo" port="20880"/>
                 if (ProtocolConfig.class.equals(beanClass)) {
                     generatedBeanName = "dubbo";
                 } else {
+                    // 这里serviceBean会根据interface得到generatedBeanName得到的是：com.source.AService
+                    // <dubbo:service interface="com.source.AService" ref="aService"/>
+                    // element实际上可以得到当前 <dubbo；service>标签所有的属性：async,delay,interface,ref,timeout,version
                     generatedBeanName = element.getAttribute("interface");
                 }
             }
@@ -85,6 +91,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
             }
             id = generatedBeanName;
             int counter = 2;
+            // 防止名字冲突，加个编号，从2开始，spring是从0开始给bean默认名的
             while (parserContext.getRegistry().containsBeanDefinition(id)) {
                 id = generatedBeanName + (counter++);
             }
@@ -100,6 +107,8 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
             for (String name : parserContext.getRegistry().getBeanDefinitionNames()) {
                 BeanDefinition definition = parserContext.getRegistry().getBeanDefinition(name);
                 PropertyValue property = definition.getPropertyValues().getPropertyValue("protocol");
+                // 如果bean中有protocol的属性名，并且这个bean的protocol属性名对应的值是ProtocolConfig类型，并且这个名字与当前protocol类的id相等，
+                // 则动态注入属性给这个bean，属性值就是当前的protocolConfig类；其实是防止某些依赖protocolConfig的bean先于protocolConfig进入容器而导致注入不到protocolConfig
                 if (property != null) {
                     Object value = property.getValue();
                     if (value instanceof ProtocolConfig && id.equals(((ProtocolConfig) value).getName())) {
@@ -109,6 +118,8 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
             }
         } else if (ServiceBean.class.equals(beanClass)) {
             String className = element.getAttribute("class");
+            // 也要支持吃独食的方式配置<dubbo:service class="com.source.impl.AServiceImpl">;
+            // TODO 吃独食方式配置dubbo服务，在容器中会创建两个bean吗？感觉配置的应该是一个吧？？？？
             if (className != null && className.length() > 0) {
                 RootBeanDefinition classDefinition = new RootBeanDefinition();
                 classDefinition.setBeanClass(ReflectUtils.forName(className));
@@ -121,6 +132,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         } else if (ConsumerConfig.class.equals(beanClass)) {
             parseNested(element, parserContext, ReferenceBean.class, false, "reference", "consumer", id, beanDefinition);
         }
+        // 获取当前bean所有属性prop，可以查看RegistryConfig类中的成员变量
         Set<String> props = new HashSet<String>();
         ManagedMap parameters = null;
         for (Method setter : beanClass.getMethods()) {
@@ -218,11 +230,14 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 }
             }
         }
+        // 获取xml节点元素的属性：如下面的配置，得到就是2个，即address="zookeeper://192.168.1.130:2181" client="zkclient"
+        // <dubbo:registry address="zookeeper://192.168.1.130:2181" client="zkclient"/>
         NamedNodeMap attributes = element.getAttributes();
         int len = attributes.getLength();
         for (int i = 0; i < len; i++) {
             Node node = attributes.item(i);
             String name = node.getLocalName();
+            // 如果当前类中的props不包括配置中的attribute，就放入到参数map中，最后注入到beanDefinition的属性parameters中，参见下面return之前的代码
             if (!props.contains(name)) {
                 if (parameters == null) {
                     parameters = new ManagedMap();

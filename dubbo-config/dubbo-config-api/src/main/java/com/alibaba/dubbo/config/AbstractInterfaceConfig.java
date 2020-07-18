@@ -168,6 +168,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                 if (address != null && address.length() > 0
                         && !RegistryConfig.NO_AVAILABLE.equalsIgnoreCase(address)) {
                     Map<String, String> map = new HashMap<String, String>();
+                    // 从ApplicationConfig中拿到@Parameter注解参数的key-value，放入到map中
                     appendParameters(map, application);
                     appendParameters(map, config);
                     map.put("path", RegistryService.class.getName());
@@ -177,15 +178,20 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                         map.put(Constants.PID_KEY, String.valueOf(ConfigUtils.getPid()));
                     }
                     if (!map.containsKey("protocol")) {
+                        // 默认情况会走这里，加载ExtensionLoader
                         if (ExtensionLoader.getExtensionLoader(RegistryFactory.class).hasExtension("remote")) {
                             map.put("protocol", "remote");
                         } else {
+                            // 默认dubbo协议
                             map.put("protocol", "dubbo");
                         }
                     }
+                    // address=zookeeper://192.168.1.130:2181
                     List<URL> urls = UrlUtils.parseURLs(address, map);
                     for (URL url : urls) {
+                        // 此时这里的url还是zookeeper开头的，添加参数registry=zookeeper，保存在parameter属性中
                         url = url.addParameter(Constants.REGISTRY_KEY, url.getProtocol());
+                        //
                         url = url.setProtocol(Constants.REGISTRY_PROTOCOL);
                         if ((provider && url.getParameter(Constants.REGISTER_KEY, true))
                                 || (!provider && url.getParameter(Constants.SUBSCRIBE_KEY, true))) {

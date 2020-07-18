@@ -178,6 +178,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     public synchronized void export() {
+        // 默认情况下，provider，export，delay都是null
         if (provider != null) {
             if (export == null) {
                 export = provider.getExport();
@@ -192,11 +193,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
         if (delay != null && delay > 0) {
             delayExportExecutor.schedule(new Runnable() {
+                @Override
                 public void run() {
                     doExport();
                 }
             }, delay, TimeUnit.MILLISECONDS);
         } else {
+            // 进入这里真正完成doExport
             doExport();
         }
     }
@@ -212,6 +215,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (interfaceName == null || interfaceName.length() == 0) {
             throw new IllegalStateException("<dubbo:service interface=\"\" /> interface not allow null!");
         }
+        // 初始化ProviderConfig，注入各种依赖
         checkDefault();
         if (provider != null) {
             if (application == null) {
@@ -259,6 +263,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 throw new IllegalStateException(e.getMessage(), e);
             }
             checkInterfaceAndMethods(interfaceClass, methods);
+            // TODO ref是什么时候注入到serviceBean中的来着？
             checkRef();
             generic = Boolean.FALSE.toString();
         }
@@ -298,6 +303,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (path == null || path.length() == 0) {
             path = interfaceName;
         }
+        // 这里导出服务
         doExportUrls();
         ProviderModel providerModel = new ProviderModel(getUniqueServiceName(), this, ref);
         ApplicationModel.initProviderModel(getUniqueServiceName(), providerModel);
@@ -337,8 +343,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doExportUrls() {
+        // 加载注册中心地址
         List<URL> registryURLs = loadRegistries(true);
         for (ProtocolConfig protocolConfig : protocols) {
+            // 注册中心地址以registry开头的；这里的协议是默认的dubbo协议
             doExportUrlsFor1Protocol(protocolConfig, registryURLs);
         }
     }
@@ -504,6 +512,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void exportLocal(URL url) {
+        // 本地发布
         if (!Constants.LOCAL_PROTOCOL.equalsIgnoreCase(url.getProtocol())) {
             URL local = URL.valueOf(url.toFullString())
                     .setProtocol(Constants.LOCAL_PROTOCOL)
@@ -670,6 +679,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         if (provider == null) {
             provider = new ProviderConfig();
         }
+        // 默认情况下provider里面似乎啥property也没注入进去
         appendProperties(provider);
     }
 

@@ -51,6 +51,7 @@ limitations under the License.
         <module>dubbo-admin</module>
         <module>dubbo-demo</module>
         <module>dubbo-plugin</module>
+        <module>dubbo-extension-code</module>
     </modules>
     <profiles>
         <profile>

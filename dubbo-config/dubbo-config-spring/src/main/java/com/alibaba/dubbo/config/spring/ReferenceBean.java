@@ -50,19 +50,31 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
         super(reference);
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
         SpringExtensionFactory.addApplicationContext(applicationContext);
     }
 
+    /**
+     * debug的时候，需要注意，idea会自动调用当前对象的toString方法，而ReferenceBean的toString方法会调用
+     * getXX方法，所以有时候看不到getObject方法，因为被idea的toString方法给调用了
+     *
+     * @return
+     * @throws Exception
+     */
+    @Override
     public Object getObject() throws Exception {
+        // 真正获取代理对象，ReferenceBean是一个FactoryBean
         return get();
     }
 
+    @Override
     public Class<?> getObjectType() {
         return getInterfaceClass();
     }
 
+    @Override
     @Parameter(excluded = true)
     public boolean isSingleton() {
         return true;

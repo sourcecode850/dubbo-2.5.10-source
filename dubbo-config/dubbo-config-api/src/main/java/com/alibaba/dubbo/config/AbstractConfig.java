@@ -463,6 +463,8 @@ public abstract class AbstractConfig implements Serializable {
             for (Method method : methods) {
                 try {
                     String name = method.getName();
+                    // debug的时候 toString方法会被idea调用，这里的toString方法被重写了，会调动getXX方法，所以ReferenceBean的getObject方法
+                    // 可能会被idea给调了，自己debug却看不到效果
                     if ((name.startsWith("get") || name.startsWith("is"))
                             && !"getClass".equals(name) && !"get".equals(name) && !"is".equals(name)
                             && Modifier.isPublic(method.getModifiers())

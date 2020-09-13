@@ -45,15 +45,18 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
 
     public StaticDirectory(URL url, List<Invoker<T>> invokers, List<Router> routers) {
         super(url == null && invokers != null && invokers.size() > 0 ? invokers.get(0).getUrl() : url, routers);
-        if (invokers == null || invokers.size() == 0)
+        if (invokers == null || invokers.size() == 0) {
             throw new IllegalArgumentException("invokers == null");
+        }
         this.invokers = invokers;
     }
 
+    @Override
     public Class<T> getInterface() {
         return invokers.get(0).getInterface();
     }
 
+    @Override
     public boolean isAvailable() {
         if (isDestroyed()) {
             return false;
@@ -66,6 +69,7 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
         return false;
     }
 
+    @Override
     public void destroy() {
         if (isDestroyed()) {
             return;

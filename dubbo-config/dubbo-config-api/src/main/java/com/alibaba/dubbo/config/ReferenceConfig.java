@@ -386,6 +386,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
 
             if (urls.size() == 1) {
+                // Protocol$Adaptive类型，注册中心是单个的情况
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
             } else {
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
@@ -396,6 +397,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                         registryURL = url; // use last registry url
                     }
                 }
+                //TODO 注册中心的是集群的情况下，又该如何？
                 if (registryURL != null) { // registry url is available
                     // use AvailableCluster only when register's cluster is available
                     URL u = registryURL.addParameter(Constants.CLUSTER_KEY, AvailableCluster.NAME);
@@ -413,6 +415,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
         if (c == null) {
             c = true; // default true
         }
+        // 这里的Invoker是MockClusterInvoker类型，里面包含两个成员：RegistryDirectory和FailoverClusterInvoker
         if (c && !invoker.isAvailable()) {
             throw new IllegalStateException("Failed to check the status of the service " + interfaceName + ". No provider available for the service " + (group == null ? "" : group + "/") + interfaceName + (version == null ? "" : ":" + version) + " from the url " + invoker.getUrl() + " to the consumer " + NetUtils.getLocalHost() + " use dubbo version " + Version.getVersion());
         }

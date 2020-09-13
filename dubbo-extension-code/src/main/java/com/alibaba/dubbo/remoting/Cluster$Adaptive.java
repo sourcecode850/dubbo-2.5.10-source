@@ -16,7 +16,10 @@ public class Cluster$Adaptive implements com.alibaba.dubbo.rpc.cluster.Cluster {
         if (extName == null) {
             throw new IllegalStateException("Fail to get extension(com.alibaba.dubbo.rpc.cluster.Cluster) name from url(" + url.toString() + ") use keys([cluster])");
         }
-        com.alibaba.dubbo.rpc.cluster.Cluster extension = (com.alibaba.dubbo.rpc.cluster.Cluster) ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.rpc.cluster.Cluster.class).getExtension(extName);
+        com.alibaba.dubbo.rpc.cluster.Cluster extension = (com.alibaba.dubbo.rpc.cluster.Cluster)
+                // 这里得到的是MockClusterWrapper->FailoverCluster;
+                // join后得到的是MockClusterInvoker—>FailoverClusterInvoker invoker
+                ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.rpc.cluster.Cluster.class).getExtension(extName);
         return extension.join(arg0);
     }
 }
